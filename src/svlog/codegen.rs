@@ -3747,7 +3747,7 @@ pub enum ModulePortKind<'a> {
          * Clippy says this is never read. That is sort of correct, only intf.ast is read. Grrr.
          */
         #[allow(dead_code)]
-        intf: &'a ast::Interface<'a>, 
+        intf: &'a ast::Interface<'a>,
         env: ParamEnv,
         decl_id: NodeId,
     },

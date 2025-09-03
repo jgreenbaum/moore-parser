@@ -6,7 +6,7 @@ use proc_macro2::Span;
 use quote::{format_ident, quote, ToTokens};
 use std::{
     cell::RefCell,
-    collections::{BTreeSet, HashSet}, 
+    collections::{BTreeSet, HashSet},
 };
 use syn::{visit::Visit, Ident};
 
@@ -157,32 +157,37 @@ pub(crate) fn derive_query_db(input: TokenStream) -> TokenStream {
         let key_indices = (0..arg_types.len()).map(syn::Index::from);
         let doc = format!("The arguments passed to the `{}` query.", name);
         // If there is one arg and it is a &dyn *Node then the default derived `PartialEq` and `Hash`
-        // traits aren't valid for the way nodes are used in the caches. They need to depend on 
+        // traits aren't valid for the way nodes are used in the caches. They need to depend on
         // the node `id()` instead.
         // let mut derive_list: Vec<proc_macro2::Literal> = Vec::new();
         // derive_list.push(proc_macro2::Literal::string("Clone"));
         // let mut derive_list: proc_macro2::TokenStream = "Clone, PartialEq, Eq, Hash".parse().unwrap();
-        let mut derive_list: Vec<proc_macro2::TokenTree> = 
-            vec!["Clone", "PartialEq", "Eq", "Hash"].into_iter().map(|i| Ident::new(i, Span::call_site()).into()).collect();
+        let mut derive_list: Vec<proc_macro2::TokenTree> = vec!["Clone", "PartialEq", "Eq", "Hash"]
+            .into_iter()
+            .map(|i| Ident::new(i, Span::call_site()).into())
+            .collect();
         let mut derive_hash_eq = false;
         if arg_types.len() == 1 {
             if let syn::Type::Reference(ref_type) = &arg_types[0] {
                 if let syn::Type::TraitObject(t_obj) = ref_type.elem.as_ref() {
                     if t_obj.dyn_token.is_some() {
                         if t_obj.bounds.len() == 1 {
-                            if let syn::TypeParamBound::Trait(bound) = t_obj.bounds.first().unwrap() {
+                            if let syn::TypeParamBound::Trait(bound) = t_obj.bounds.first().unwrap()
+                            {
                                 let t_ident = bound.path.segments.last().unwrap().ident.to_string();
                                 if t_ident.contains("Node") {
                                     derive_hash_eq = true;
-                                    derive_list = 
-                                        vec!["Clone", "Eq"].into_iter().map(|i| Ident::new(i, Span::call_site()).into()).collect();
+                                    derive_list = vec!["Clone", "Eq"]
+                                        .into_iter()
+                                        .map(|i| Ident::new(i, Span::call_site()).into())
+                                        .collect();
                                 }
                             }
                         }
                     }
                 }
             }
-        } 
+        }
         let derive_tokens = derive_list; //proc_macro2::TokenStream::from_iter(derive_list);
         keys.push(quote! {
             #[doc = #doc]
