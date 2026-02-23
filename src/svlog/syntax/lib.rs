@@ -3,6 +3,8 @@
 //! This crate implements parsing SystemVerilog source files into an abstract
 //! syntax tree and resolving the encountered names.
 
+#![allow(mismatched_lifetime_syntaxes)]
+
 #[macro_use]
 extern crate log;
 

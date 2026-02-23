@@ -2,6 +2,7 @@
 
 //! This crate implements VHDL for the moore compiler.
 
+#![allow(mismatched_lifetime_syntaxes)]
 #![allow(bare_trait_objects)] // Remove this once fixed
 #![allow(unused_doc_comments)] // Remove this once fixed
 #![allow(dead_code)]

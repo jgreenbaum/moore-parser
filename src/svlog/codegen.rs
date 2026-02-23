@@ -5,15 +5,15 @@
 
 use crate::{
     crate_prelude::*,
-    hir::{AccessedNode, HirNode},
-    port_list::PortList,
-    resolver::InstTarget,
+    hir::{AccessedNode, /*HirNode*/},
+    /* port_list::PortList,
+    resolver::InstTarget,*/
     ty::UnpackedType,
-    value::{Value, ValueKind},
+    // value::{Value, ValueKind},
     ParamEnv,
 };
-use moore_circt::{self as circt, comb::CmpPred, mlir, prelude::*};
-use num::{BigInt, FromPrimitive, One, ToPrimitive, Zero};
+// use moore_circt::{self as circt, comb::CmpPred, mlir, prelude::*};
+// use num::{BigInt, FromPrimitive, One, ToPrimitive, Zero};
 use std::{
     collections::{HashMap, HashSet},
     iter::{once, repeat},
@@ -21,9 +21,9 @@ use std::{
     rc::Rc,
 };
 
-pub type HybridValue = (llhd::ir::Value, mlir::Value);
+/* pub type HybridValue = (llhd::ir::Value, mlir::Value);
 pub type HybridType = (llhd::Type, mlir::Type);
-pub type HybridBlock = (llhd::ir::Block, mlir::Block);
+pub type HybridBlock = (llhd::ir::Block, mlir::Block); */
 
 /// A code generator.
 ///
@@ -32,23 +32,23 @@ pub struct CodeGenerator<'gcx, C> {
     /// The compilation context.
     cx: C,
     /// The MLIR compilation context.
-    mcx: mlir::Context,
+    // mcx: mlir::Context,
     /// The LLHD module to be populated.
     into: llhd::ir::Module,
     /// THe MLIR module to be populated.
-    into_mlir: circt::ModuleOp,
+    // into_mlir: circt::ModuleOp,
     /// Tables holding mappings and interned values.
     tables: Tables<'gcx>,
 }
 
 impl<'gcx, C> CodeGenerator<'gcx, C> {
     /// Create a new code generator.
-    pub fn new(cx: C, into_mlir: circt::ModuleOp) -> Self {
+    pub fn new(cx: C /*, into_mlir: circt::ModuleOp*/) -> Self {
         CodeGenerator {
             cx,
-            mcx: into_mlir.context(),
+            // mcx: into_mlir.context(),
             into: llhd::ir::Module::new(),
-            into_mlir,
+            // into_mlir,
             tables: Default::default(),
         }
     }
@@ -63,7 +63,7 @@ impl<'gcx, C> CodeGenerator<'gcx, C> {
 struct Tables<'gcx> {
     module_defs: HashMap<NodeEnvId, Result<Rc<EmittedModule<'gcx>>>>,
     module_signatures: HashMap<NodeEnvId, (llhd::ir::UnitName, llhd::ir::Signature)>,
-    interned_types: HashMap<&'gcx UnpackedType<'gcx>, Result<HybridType>>,
+    // interned_types: HashMap<&'gcx UnpackedType<'gcx>, Result<HybridType>>,
     function_defs: HashMap<NodeEnvId, Result<Rc<EmittedFunction>>>,
 }
 
@@ -75,6 +75,7 @@ impl<'gcx, C> Deref for CodeGenerator<'gcx, C> {
     }
 }
 
+/*
 impl<'a, 'gcx, C: Context<'gcx>> CodeGenerator<'gcx, &'a C> {
     /// Emit the global unparametrized things which are unambiguous, like free
     /// functions.
@@ -873,6 +874,7 @@ impl<'a, 'gcx, C: Context<'gcx>> CodeGenerator<'gcx, &'a C> {
         x
     }
 }
+    */
 
 /// A name uniquifier.
 #[derive(Default)]
@@ -909,18 +911,18 @@ struct UnitGenerator<'a, 'gcx, C> {
     /// The builder into which instructions are emitted.
     builder: &'a mut llhd::ir::UnitBuilder<'a>,
     /// The emitted LLHD values for various nodes.
-    values: &'a mut HashMap<AccessedNode, HybridValue>,
+    // values: &'a mut HashMap<AccessedNode, HybridValue>,
     /// The MLIR builder which is used to create new operations.
-    mlir_builder: &'a mut mlir::Builder,
+    // mlir_builder: &'a mut mlir::Builder,
     /// The constant values emitted into the unit.
-    interned_consts: HashMap<Value<'gcx>, Result<HybridValue>>,
+    // interned_consts: HashMap<Value<'gcx>, Result<HybridValue>>,
     /// The MIR lvalues emitted into the unit.
-    interned_lvalues: HashMap<NodeId, Result<(HybridValue, Option<HybridValue>)>>,
+    // interned_lvalues: HashMap<NodeId, Result<(HybridValue, Option<HybridValue>)>>,
     /// The MIR rvalues emitted into the unit.
-    interned_rvalues: HashMap<(NodeId, Mode), Result<(HybridValue, Mode)>>,
+    // interned_rvalues: HashMap<(NodeId, Mode), Result<(HybridValue, Mode)>>,
     /// The shadow variables introduced to handle signals which are both read
     /// and written in a process.
-    shadows: HashMap<AccessedNode, HybridValue>,
+    // shadows: HashMap<AccessedNode, HybridValue>,
     /// The emitted signal and instance names.
     unique_names: NameUniquifier,
     /// Whether the last emitted statement was a terminator. This indicates
@@ -928,12 +930,12 @@ struct UnitGenerator<'a, 'gcx, C> {
     /// whether a new (unreachable) block needs to be inserted to capture
     /// additional ops after a terminator.
     terminated: bool,
-    /// A stack of blocks, the last of which will be branched to by a `continue`
-    /// statement.
-    continue_stack: Vec<HybridBlock>,
-    /// A stack of blocks, the last of which will be branched to by a `break`
-    /// statement.
-    break_stack: Vec<HybridBlock>,
+    // A stack of blocks, the last of which will be branched to by a `continue`
+    // statement.
+    // continue_stack: Vec<HybridBlock>,
+    // A stack of blocks, the last of which will be branched to by a `break`
+    // statement.
+    // break_stack: Vec<HybridBlock>,
 }
 
 impl<'a, 'gcx, C> Deref for UnitGenerator<'a, 'gcx, C> {
@@ -950,6 +952,7 @@ impl<'a, 'gcx, C> DerefMut for UnitGenerator<'a, 'gcx, C> {
     }
 }
 
+/*
 impl<'a, 'gcx, C> UnitGenerator<'a, 'gcx, C> {
     fn new(
         gen: &'a mut CodeGenerator<'gcx, C>,
@@ -972,8 +975,9 @@ impl<'a, 'gcx, C> UnitGenerator<'a, 'gcx, C> {
             continue_stack: Default::default(),
         }
     }
-}
+} */
 
+/*
 impl<'a, 'b, 'gcx, C> UnitGenerator<'a, 'gcx, &'b C>
 where
     C: Context<'gcx> + 'b,
@@ -3599,7 +3603,7 @@ where
             circt::llhd::StoreOp::new(self.mlir_builder, var.1, value.1),
         );
     }
-}
+} */
 
 /// An rvalue emission mode.
 ///
@@ -3725,7 +3729,7 @@ pub struct ModulePort<'a> {
     /// The type of the port.
     pub ty: &'a UnpackedType<'a>,
     /// The lowered MLIR type.
-    pub mty: mlir::Type,
+    // pub mty: mlir::Type,
     /// The preferred name in the LLHD IR.
     pub name: String,
     /// The corresponding `AccessedNode` specifier.
@@ -3767,24 +3771,25 @@ pub struct IntfSignal<'a> {
     pub default: Option<NodeId>,
 }
 
+/*
 /// Convert a `Span` to a corresponding MLIR location.
 fn span_to_loc(cx: mlir::Context, span: Span) -> mlir::Location {
     let l = span.begin();
     mlir::Location::file_line_col(cx, &l.source.get_path(), l.human_line(), l.human_column())
-}
+} */
 
-/// Make a type a signal type.
+/* /// Make a type a signal type.
 ///
 /// This is a convenience function that processes old LLHD types and the newer
 /// MLIR types in parallel.
 fn signal_ty(ty: HybridType) -> HybridType {
     (llhd::signal_ty(ty.0), circt::llhd::get_signal_type(ty.1))
-}
+} */
 
-/// Make a type a pointer type.
+/* /// Make a type a pointer type.
 ///
 /// This is a convenience function that processes old LLHD types and the newer
 /// MLIR types in parallel.
 fn pointer_ty(ty: HybridType) -> HybridType {
     (llhd::pointer_ty(ty.0), circt::llhd::get_pointer_type(ty.1))
-}
+}*/

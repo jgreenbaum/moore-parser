@@ -6,15 +6,15 @@
 extern crate log;
 
 use clap::{App, Arg, ArgMatches};
-use llhd;
-use moore_circt::{self as circt, mlir, prelude::*, sys::*};
+// use llhd;
+// use moore_circt::{self as circt, mlir, prelude::*, sys::*};
 // use llhd::opt::{Pass, PassContext};
-use moore::common::score::NodeRef;
+// use moore::common::score::NodeRef;
 use moore::errors::*;
-use moore::name::Name;
-use moore::score::{ScoreBoard, ScoreContext};
-use moore::source::Span;
-use moore::svlog::{ast::AcceptVisitor as _, hir::Visitor as _, QueryDatabase as _};
+// use moore::name::Name;
+// use moore::score::{ScoreBoard, ScoreContext};
+// use moore::source::Span;
+use moore::svlog::{/*ast::AcceptVisitor as _, hir::Visitor as _,*/ QueryDatabase as _};
 use moore::*;
 use std::path::Path;
 
@@ -323,7 +323,7 @@ fn score(sess: &Session, matches: &ArgMatches) {
     if matches.is_present("check-syntax") {
         std::process::exit(0);
     }
-
+/*
     // Create the scoreboard and add the initial map of libraries.
     let arenas = score::Arenas::new();
     let sb = ScoreBoard::new(&arenas);
@@ -386,7 +386,7 @@ fn score(sess: &Session, matches: &ArgMatches) {
     // Emit the module.
     // TODO: Re-enable this once the VHDL crate has been moved over to llhd v0.8.
     // llhd::assembly::write_module(&mut std::io::stdout().lock(), &vhdl_module);
-
+*/
     if sess.failed() {
         std::process::exit(1);
     }
@@ -394,7 +394,7 @@ fn score(sess: &Session, matches: &ArgMatches) {
 
 /// Resolve an entity/module specificaiton of the form `[lib.]entity[.arch]` for
 /// elaboration.
-fn elaborate_name(
+/* fn elaborate_name(
     matches: &ArgMatches,
     ctx: &ScoreContext,
     lib_id: score::LibRef,
@@ -519,6 +519,7 @@ fn elaborate_name(
                 svlog::InstVerbosityVisitor::new(ctx.svlog).visit_node_with_id(m, false);
             }
 
+            /*
             // Create an MLIR context and load the dialects we need.
             let mlir_cx = mlir::OwnedContext::new();
             mlir_cx.load_dialect(circt::func::dialect());
@@ -547,8 +548,8 @@ fn elaborate_name(
 
             // Create the top-level MLIR module.
             let mlir_module = circt::ModuleOp::new(*mlir_cx);
-
-            let mut cg = svlog::CodeGenerator::new(ctx.svlog, mlir_module);
+*/
+            let mut cg = svlog::CodeGenerator::new(ctx.svlog/*, mlir_module */);
             for root in ctx.svlog.roots() {
                 cg.emit_globals(root)?;
             }
@@ -579,8 +580,9 @@ fn elaborate_name(
         }
     }
     Ok(())
-}
+}*/
 
+/*
 /// A custom handler for MLIR diagnostics, which prints them through Moore's own
 /// diagnostic engine.
 unsafe extern "C" fn moore_mlir_diagnostic_handler(
@@ -629,8 +631,9 @@ unsafe extern "C" fn moore_mlir_diagnostic_handler(
 
     sess.emit(d);
     MlirLogicalResult { value: 1 }
-}
+}*/
 
+/*
 /// Convert the message in an MLIR diagnostic to a string.
 unsafe fn mlir_diagnostic_to_string(diag: MlirDiagnostic) -> String {
     unsafe extern "C" fn stringify_callback(string: MlirStringRef, to: *mut std::ffi::c_void) {
@@ -667,7 +670,9 @@ unsafe fn mlir_location_to_span(loc: MlirLocation) -> Option<Span> {
         None
     }
 }
+*/
 
+/*
 #[derive(Debug)]
 enum OutputFormat {
     Llhd,
@@ -799,7 +804,7 @@ fn parse_elaborate_name<S: AsRef<str>>(name: S) -> Result<(Option<Name>, Name, O
 
     Ok((lib, ent, third))
 }
-
+*/
 /// A visitor that emits detailed type information to stdout.
 pub struct TypeVerbosityVisitor<'a, 'gcx>(&'a svlog::GlobalContext<'gcx>, svlog::ParamEnv);
 

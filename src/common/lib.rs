@@ -2,7 +2,7 @@
 
 //! This crate contains the fundamental utilities used to by the rest of the
 //! moore compiler.
-
+#![allow(mismatched_lifetime_syntaxes)]
 #[macro_use]
 extern crate bitflags;
 

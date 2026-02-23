@@ -732,12 +732,12 @@ impl<'a, 'b> ast::Visitor<'a> for AstMapRegistrator<'a, 'b> {
             let parent = if let Some(kind) = parent.as_all().get_type_kind() {
                 kind.get_parent().unwrap()
             } else {
-                parent
+                parent 
             };
             self.cx.map_ast_with_parent(n, parent.id());
         }
     }
-
+/*
     fn post_visit_module(&mut self, node: &'a ast::Module<'a>) {
         // Ensure the ports are added to the AST map. Pretty ugly, but necessary.
         self.cx.canonicalize_ports(node);
@@ -747,4 +747,5 @@ impl<'a, 'b> ast::Visitor<'a> for AstMapRegistrator<'a, 'b> {
         // Ensure the ports are added to the AST map. Pretty ugly, but necessary.
         self.cx.canonicalize_ports(node);
     }
+    */
 }
