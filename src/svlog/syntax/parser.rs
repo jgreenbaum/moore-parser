@@ -941,9 +941,12 @@ fn parse_module_decl<'n>(p: &mut dyn AbstractParser<'n>) -> ReportedResult<Modul
         ))
     });
     let sp = p.peek(0).1;
-    p.require_reported(Keyword(Kw::Endmodule))?;
-    if p.try_eat(Colon) {
-        p.eat_ident("module name")?;
+    // JEG: Hack to allow module def by itself
+    if p.peek(0).0 != Token::Eof {
+        p.require_reported(Keyword(Kw::Endmodule))?;
+        if p.try_eat(Colon) {
+            p.eat_ident("module name")?;
+        }
     }
     result
 }
