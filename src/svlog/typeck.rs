@@ -473,14 +473,14 @@ pub(crate) fn map_to_type<'a>(
         // as the HIR is implemented at the moment, certain parameter bindings
         // can bind expressions to type parameters.
         ast::AllNode::Expr(ast) => {
-            let ast = cx.arena().alloc(ast::TypeOrExpr::Expr(ast));
+            let ast = cx.arena().alloc(ast::TypeOrExpr::Expr(Box::new(ast.clone())));
             debug!("Disambiguating {:?}", ast);
             let rst = match cx.disamb_type_or_expr(Ref(ast)) {
                 Ok(rst) => rst,
                 Err(()) => return Some(UnpackedType::make_error()),
             };
             match rst {
-                ast::TypeOrExpr::Type(ast) => Some(cx.packed_type_from_ast(Ref(ast), env, None)),
+                ast::TypeOrExpr::Type(ty_box) => Some(cx.packed_type_from_ast(Ref(ty_box.as_ref()), env, None)),
                 ast::TypeOrExpr::Expr(_) => None,
             }
         }
@@ -846,7 +846,7 @@ pub(crate) fn packed_type_from_ast<'a>(
             };
             let ty = match arg {
                 ast::TypeOrExpr::Expr(expr) => cx.need_self_determined_type(expr.id(), env),
-                ast::TypeOrExpr::Type(ty) => cx.packed_type_from_ast(Ref(ty), env, None),
+                ast::TypeOrExpr::Type(ty) => cx.packed_type_from_ast(Ref(ty.as_ref()), env, None),
             };
 
             // Distinguish between packed and unpacked types here.

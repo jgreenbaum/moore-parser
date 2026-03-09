@@ -30,8 +30,8 @@ pub(crate) fn hir_of<'a>(cx: &impl Context<'a>, node_id: NodeId) -> Result<HirNo
         AstNode::Interface(x) => cx.hir_of_interface(x).map(HirNode::Interface),
         AstNode::Type(ty) => lower_type(cx, node_id, ty),
         AstNode::TypeOrExpr(x) => match cx.disamb_type_or_expr(Ref(x))? {
-            ast::TypeOrExpr::Type(ty) => lower_type(cx, node_id, ty),
-            ast::TypeOrExpr::Expr(expr) => cx.hir_of_expr(Ref(expr)).map(HirNode::Expr),
+            ast::TypeOrExpr::Type(ty) => lower_type(cx, node_id, ty.as_ref()),
+            ast::TypeOrExpr::Expr(expr) => cx.hir_of_expr(Ref(expr.as_ref())).map(HirNode::Expr),
         },
         AstNode::Expr(expr) => cx.hir_of_expr(Ref(expr)).map(HirNode::Expr),
         AstNode::InstTarget(ast) => {
@@ -620,9 +620,10 @@ fn lower_type<'gcx>(
         ast::TypeRef(ref arg) => {
             // Special care is needed here for types that were mistakenly parsed
             // as an expression.
-            match *arg.as_ref() {
-                ast::TypeOrExpr::Expr(expr) => match expr.data {
+            match arg.as_ref() {
+                ast::TypeOrExpr::Expr(expr_box) => match expr_box.data {
                     ast::IdentExpr(n) => {
+                        let expr = expr_box.as_ref();
                         let binding = cx.resolve_upwards_or_error(n, node_id)?;
                         match cx.hir_of(binding)? {
                             HirNode::TypeParam(..) | HirNode::Typedef(..) => {
@@ -640,16 +641,16 @@ fn lower_type<'gcx>(
                                 )
                             }
                             _ => hir::TypeKind::RefExpr(
-                                cx.map_ast_with_parent(AstNode::Expr(expr), node_id),
+                                cx.map_ast_with_parent(AstNode::Expr(expr_box.as_ref()), node_id),
                             ),
                         }
                     }
                     _ => {
-                        hir::TypeKind::RefExpr(cx.map_ast_with_parent(AstNode::Expr(expr), node_id))
+                        hir::TypeKind::RefExpr(cx.map_ast_with_parent(AstNode::Expr(expr_box.as_ref()), node_id))
                     }
                 },
-                ast::TypeOrExpr::Type(ty) => {
-                    hir::TypeKind::RefType(cx.map_ast_with_parent(AstNode::Type(ty), node_id))
+                ast::TypeOrExpr::Type(ty_box) => {
+                    hir::TypeKind::RefType(cx.map_ast_with_parent(AstNode::Type(ty_box.as_ref()), node_id))
                 }
             }
         }

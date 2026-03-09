@@ -193,8 +193,6 @@ fn main() {
 }
 
 fn score(sess: &Session, matches: &ArgMatches) {
-    let svlog_arenas = svlog::GlobalArenas::default();
-
     // Prepare a list of include paths.
     let include_paths: Vec<_> = match matches.values_of("inc") {
         Some(args) => args.map(|x| std::path::Path::new(x)).collect(),
@@ -278,7 +276,7 @@ fn score(sess: &Session, matches: &ArgMatches) {
                 }
 
                 let lexer = svlog::lexer::Lexer::new(preproc);
-                match svlog::parser::parse(lexer, &svlog_arenas.ast) {
+                match svlog::parser::parse(lexer) {
                     Ok(x) => asts.push(score::Ast::Svlog(x)),
                     Err(()) => failed = true,
                 }

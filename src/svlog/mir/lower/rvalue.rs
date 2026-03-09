@@ -204,8 +204,8 @@ fn lower_expr_inner<'gcx>(
         }
         hir::ExprKind::Builtin(hir::BuiltinCall::Bits(arg)) => {
             let arg_ty = match cx.disamb_type_or_expr(Ref(arg))? {
-                &ast::TypeOrExpr::Type(x) => cx.map_to_type_or_error(Ref(x), env),
-                &ast::TypeOrExpr::Expr(x) => cx.type_of_expr(Ref(cx.hir_of_expr(Ref(x))?), env),
+                ast::TypeOrExpr::Type(x) => cx.map_to_type_or_error(Ref(x.as_ref()), env),
+                ast::TypeOrExpr::Expr(x) => cx.type_of_expr(Ref(cx.hir_of_expr(Ref(x.as_ref()))?), env),
             };
             match arg_ty.get_bit_size() {
                 Some(size) => Ok(builder.constant(value::make_int(ty, size.into()))),

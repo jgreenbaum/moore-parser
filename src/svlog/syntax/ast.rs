@@ -1430,11 +1430,11 @@ pub enum Expr<'a> {
 /// resolution.
 #[moore_derive::arena]
 #[moore_derive::visit]
-#[derive(AnyNodeData, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(AnyNodeData, Debug, Clone, PartialEq, Eq)]
 #[forward]
 pub enum TypeOrExpr<'a> {
-    Type(&'a Type<'a>),
-    Expr(&'a Expr<'a>),
+    Type(Box<Type<'a>>),
+    Expr(Box<Expr<'a>>),
 }
 
 impl<'a> AnyNode<'a> for TypeOrExpr<'a> {
@@ -2119,7 +2119,7 @@ impl<'a> InstName<'a> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Modport<'a> {
     /// The names of the modports.
-    pub names: Vec<&'a ModportName<'a>>,
+    pub names: Vec<Box<ModportName<'a>>>,
 }
 
 /// A single modport declaration.
@@ -2133,7 +2133,7 @@ pub struct ModportName<'a> {
     #[name]
     pub name: Spanned<Name>,
     /// The individual port specifications.
-    pub ports: Vec<&'a ModportPort<'a>>,
+    pub ports: Vec<Box<ModportPort<'a>>>,
 }
 
 /// A modport ports declaration.
@@ -2146,7 +2146,7 @@ pub enum ModportPort<'a> {
     /// A simple port, for example `input a, .b(expr)`.
     Simple {
         dir: Spanned<PortDir>,
-        port: Vec<&'a ModportSimplePort<'a>>,
+        port: Vec<Box<ModportSimplePort<'a>>>,
     },
 }
 
@@ -2161,7 +2161,7 @@ pub struct ModportSimplePort<'a> {
     #[name]
     pub name: Spanned<Name>,
     /// The optional parenthesized expression of the port.
-    pub expr: Option<&'a Expr<'a>>,
+    pub expr: Option<Box<Expr<'a>>>,
 }
 
 /// A parameter or localparam declaration.

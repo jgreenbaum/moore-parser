@@ -39,26 +39,28 @@ pub(crate) fn disamb_type_or_expr<'a>(
     cx: &impl Context<'a>,
     Ref(ast): Ref<'a, ast::TypeOrExpr<'a>>,
 ) -> Result<&'a ast::TypeOrExpr<'a>> {
-    match *ast {
+    match ast {
         ast::TypeOrExpr::Expr(expr) => match expr.data {
             ast::IdentExpr(n) => {
-                let loc = cx.scope_location(expr);
+                let loc = cx.scope_location(expr.as_ref());
                 let binding = cx.resolve_local_or_error(n, loc, false)?;
                 match cx.disamb_kind(Ref(&binding.node)) {
                     Kind::Value => Ok(ast),
                     Kind::Type => {
-                        let ty = cx.arena().alloc(ast::Type::new(
+                        let type_or_expr = cx.arena().alloc(ast::TypeOrExpr::Type(Box::new(ast::Type::new(
                             expr.span,
                             ast::TypeData {
                                 kind: ast::TypeKind::new(expr.span, ast::NamedType(n)),
                                 sign: ast::TypeSign::None,
                                 dims: vec![],
                             },
-                        ));
-                        ty.link_attach(expr, expr.order());
-                        cx.register_ast(ty);
-                        cx.map_ast_with_parent(AstNode::Type(ty), ty.id());
-                        Ok(cx.arena().alloc(ast::TypeOrExpr::Type(ty)))
+                        ))));
+                        if let ast::TypeOrExpr::Type(ref ty_box) = *type_or_expr {
+                            ty_box.link_attach(expr.as_ref(), expr.order());
+                            cx.register_ast(&**ty_box);
+                            cx.map_ast_with_parent(AstNode::Type(&**ty_box), ty_box.id());
+                        }
+                        Ok(type_or_expr)
                     }
                 }
             }
@@ -109,7 +111,7 @@ pub(crate) fn disamb_type_or_expr<'a>(
                                     dims: vec![],
                                 },
                             );
-                            let ty = cx.arena().alloc(ast::Type::new(
+                            let type_or_expr = cx.arena().alloc(ast::TypeOrExpr::Type(Box::new(ast::Type::new(
                                 expr.span,
                                 ast::TypeData {
                                     kind: ast::TypeKind::new(
@@ -123,11 +125,13 @@ pub(crate) fn disamb_type_or_expr<'a>(
                                     sign: ast::TypeSign::None,
                                     dims: vec![],
                                 },
-                            ));
-                            ty.link_attach(expr, expr.order());
-                            cx.register_ast(ty);
-                            cx.map_ast_with_parent(AstNode::Type(ty), ty.id());
-                            Ok(cx.arena().alloc(ast::TypeOrExpr::Type(ty)))
+                            ))));
+                            if let ast::TypeOrExpr::Type(ref ty_box) = *type_or_expr {
+                                ty_box.link_attach(expr.as_ref(), expr.order());
+                                cx.register_ast(&**ty_box);
+                                cx.map_ast_with_parent(AstNode::Type(&**ty_box), ty_box.id());
+                            }
+                            Ok(type_or_expr)
                         }
                     }
                 }
