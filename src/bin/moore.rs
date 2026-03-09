@@ -15,6 +15,8 @@ use moore::errors::*;
 // use moore::source::Span;
 use moore::svlog::{/*ast::AcceptVisitor as _, hir::Visitor as _,*/ QueryDatabase as _};
 use moore::*;
+use std::fs::OpenOptions;
+use std::io::Read;
 use std::path::Path;
 
 #[derive(Debug)]
@@ -192,6 +194,55 @@ fn main() {
     score(&session, &matches);
 }
 
+fn parse_string<'a>(sess: &Session, filename: &str, content: String, 
+                 include_paths: &[&Path], defines: &[(&str, Option<&str>)]) 
+    -> Result<score::Ast<'a>, ()>
+{
+    // Detect the file type.
+    let language = match Path::new(&filename).extension().and_then(|s| s.to_str()) {
+        Some("sv") | Some("svh") => Language::SystemVerilog,
+        Some("v") | Some("vh") => Language::Verilog,
+        Some("vhd") | Some("vhdl") => Language::Vhdl,
+        Some(ext) => {
+            sess.emit(
+                DiagBuilder2::warning(format!("ignoring `{}`", filename)).add_note(format!(
+                    "Cannot determine language from extension `.{}`",
+                    ext
+                )),
+            );
+            return Err(());
+        }
+        None => {
+            sess.emit(
+                DiagBuilder2::warning(format!("ignoring `{}`", filename)).add_note(format!(
+                    "No file extension that can be used to guess language"
+                )),
+            );
+            return Err(());
+        }
+    };
+
+    // Add the file to the source manager.
+    let sm = source::get_source_manager();
+    let source = sm.add(filename, &content.as_str());
+
+    // Parse the file.
+    match language {
+        Language::SystemVerilog | Language::Verilog => {
+            let preproc = svlog::preproc::Preprocessor::new(source, &include_paths, &defines);
+            let lexer = svlog::lexer::Lexer::new(preproc);
+            match svlog::parser::parse(lexer) {
+                Ok(x) => return Ok(score::Ast::Svlog(x)),
+                Err(()) => return Err(())
+            }
+        }
+        Language::Vhdl => match vhdl::syntax::parse(source) {
+            Ok(x) => return Ok(score::Ast::Vhdl(x)),
+            Err(()) => return Err(()),
+        },
+    }
+}
+
 fn score(sess: &Session, matches: &ArgMatches) {
     // Prepare a list of include paths.
     let include_paths: Vec<_> = match matches.values_of("inc") {
@@ -216,76 +267,35 @@ fn score(sess: &Session, matches: &ArgMatches) {
         if filename.is_empty() {
             continue;
         }
-
-        // Detect the file type.
-        let language = match Path::new(&filename).extension().and_then(|s| s.to_str()) {
-            Some("sv") | Some("svh") => Language::SystemVerilog,
-            Some("v") | Some("vh") => Language::Verilog,
-            Some("vhd") | Some("vhdl") => Language::Vhdl,
-            Some(ext) => {
+        let mut file = match OpenOptions::new()
+                            .create(false)
+                            .read(true)
+                            .open(filename) {
+            Ok(f) => f,
+            Err(_) => {
                 sess.emit(
-                    DiagBuilder2::warning(format!("ignoring `{}`", filename)).add_note(format!(
-                        "Cannot determine language from extension `.{}`",
-                        ext
-                    )),
+                    DiagBuilder2::warning(format!("Failed to open input file `{}`", filename))
                 );
-                continue;
-            }
-            None => {
-                sess.emit(
-                    DiagBuilder2::warning(format!("ignoring `{}`", filename)).add_note(format!(
-                        "No file extension that can be used to guess language"
-                    )),
-                );
+                failed = true;
                 continue;
             }
         };
-
-        // Add the file to the source manager.
-        let sm = source::get_source_manager();
-        let source = match sm.open(&filename) {
-            Some(s) => s,
-            None => {
-                sess.emit(DiagBuilder2::fatal(format!(
-                    "unable to open `{}`",
-                    filename
-                )));
+        let mut content = String::new();
+        match file.read_to_string(&mut content) {
+            Ok(_) => (),
+            Err(_) => {
+                sess.emit(
+                    DiagBuilder2::warning(format!("Failed to read from `{}`", filename))
+                );
+                failed = true;
                 continue;
             }
-        };
-
-        // Parse the file.
-        match language {
-            Language::SystemVerilog | Language::Verilog => {
-                let preproc = svlog::preproc::Preprocessor::new(source, &include_paths, &defines);
-                if matches.is_present("preproc") {
-                    for token in preproc {
-                        print!(
-                            "{}",
-                            match token {
-                                Ok((_token, span)) => span.extract(),
-                                Err(diag) => {
-                                    sess.emit(diag);
-                                    failed = true;
-                                    continue;
-                                }
-                            }
-                        );
-                    }
-                    continue;
-                }
-
-                let lexer = svlog::lexer::Lexer::new(preproc);
-                match svlog::parser::parse(lexer) {
-                    Ok(x) => asts.push(score::Ast::Svlog(x)),
-                    Err(()) => failed = true,
-                }
-            }
-            Language::Vhdl => match vhdl::syntax::parse(source) {
-                Ok(x) => asts.push(score::Ast::Vhdl(x)),
-                Err(()) => failed = true,
-            },
         }
+        
+        match parse_string(sess, filename, content, include_paths.as_slice(), defines.as_slice()) {
+            Ok(ast) => asts.push(ast),
+            Err(_) => continue,
+        };
     }
     if failed || sess.failed() {
         std::process::exit(1);
