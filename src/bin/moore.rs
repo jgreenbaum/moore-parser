@@ -194,9 +194,9 @@ fn main() {
     score(&session, &matches);
 }
 
-fn parse_string<'a>(sess: &Session, filename: &str, content: String, 
+fn parse_string<'a>(filename: &str, content: String, 
                  include_paths: &[&Path], defines: &[(&str, Option<&str>)]) 
-    -> Result<score::Ast<'a>, ()>
+    -> Result<score::Ast<'a>, DiagBuilder2>
 {
     // Detect the file type.
     let language = match Path::new(&filename).extension().and_then(|s| s.to_str()) {
@@ -204,21 +204,17 @@ fn parse_string<'a>(sess: &Session, filename: &str, content: String,
         Some("v") | Some("vh") => Language::Verilog,
         Some("vhd") | Some("vhdl") => Language::Vhdl,
         Some(ext) => {
-            sess.emit(
+            return Err(
                 DiagBuilder2::warning(format!("ignoring `{}`", filename)).add_note(format!(
                     "Cannot determine language from extension `.{}`",
                     ext
-                )),
-            );
-            return Err(());
+                )));
         }
         None => {
-            sess.emit(
+            return Err(
                 DiagBuilder2::warning(format!("ignoring `{}`", filename)).add_note(format!(
                     "No file extension that can be used to guess language"
-                )),
-            );
-            return Err(());
+                )));
         }
     };
 
@@ -233,12 +229,12 @@ fn parse_string<'a>(sess: &Session, filename: &str, content: String,
             let lexer = svlog::lexer::Lexer::new(preproc);
             match svlog::parser::parse(lexer) {
                 Ok(x) => return Ok(score::Ast::Svlog(x)),
-                Err(()) => return Err(())
+            Err(()) => return Err(DiagBuilder2::error(format!("Failed to parse {}", filename))),
             }
         }
         Language::Vhdl => match vhdl::syntax::parse(source) {
             Ok(x) => return Ok(score::Ast::Vhdl(x)),
-            Err(()) => return Err(()),
+            Err(()) => return Err(DiagBuilder2::error(format!("Failed to parse {}", filename))),
         },
     }
 }
@@ -292,9 +288,9 @@ fn score(sess: &Session, matches: &ArgMatches) {
             }
         }
         
-        match parse_string(sess, filename, content, include_paths.as_slice(), defines.as_slice()) {
+        match parse_string(filename, content, include_paths.as_slice(), defines.as_slice()) {
             Ok(ast) => asts.push(ast),
-            Err(_) => continue,
+            Err(diag) => sess.emit(diag),
         };
     }
     if failed || sess.failed() {
