@@ -33,5 +33,5 @@ unstable = []
 
 [[bin]]
 doc = false
-name = "moore"
-path = "src/bin/moore.rs"
+name = "moore-parser"
+path = "src/bin/moore-parser.rs"

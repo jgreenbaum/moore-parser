@@ -27,9 +27,22 @@ enum Language {
     Vhdl,
 }
 
+use crate::vhdl::syntax::ast as vhdl_ast;
+
+/// Roots for every AST that we support. During parsing, a list of these entries
+/// is generated that is then passed to the `ScoreBoard` as a reference.
+#[derive(Debug)]
+pub enum Ast<'a> {
+    Vhdl(Vec<vhdl_ast::DesignUnit>),
+    Svlog(svlog::ast::SourceFile<'a>),
+}
+
+/**
+ * Parse a Verilog statement or VHDL primary or secondary unit into an AST
+ */
 pub fn parse_string<'a>(filename: &str, content: String, 
                          include_paths: &[&Path], defines: &[(&str, Option<&str>)]) 
-    -> Result<score::Ast<'a>, DiagBuilder2>
+    -> Result<Ast<'a>, DiagBuilder2>
 {
     // Detect the file type.
     let language = match Path::new(&filename).extension().and_then(|s| s.to_str()) {
@@ -61,12 +74,12 @@ pub fn parse_string<'a>(filename: &str, content: String,
             let preproc = svlog::preproc::Preprocessor::new(source, &include_paths, &defines);
             let lexer = svlog::lexer::Lexer::new(preproc);
             match svlog::parser::parse(lexer) {
-                Ok(x) => return Ok(score::Ast::Svlog(x)),
+                Ok(x) => return Ok(Ast::Svlog(x)),
             Err(()) => return Err(DiagBuilder2::error(format!("Failed to parse {}", filename))),
             }
         }
         Language::Vhdl => match vhdl::syntax::parse(source) {
-            Ok(x) => return Ok(score::Ast::Vhdl(x)),
+            Ok(x) => return Ok(Ast::Vhdl(x)),
             Err(()) => return Err(DiagBuilder2::error(format!("Failed to parse {}", filename))),
         },
     }

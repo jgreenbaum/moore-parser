@@ -36,33 +36,6 @@ fn main() {
         .author(clap::crate_authors!())
         .about(clap::crate_description!())
         .arg(
-            Arg::with_name("trace_scoreboard")
-                .long("trace-scoreboard")
-                .global(true),
-        )
-        .arg(
-            Arg::with_name("verbosity-opts")
-                .short("V")
-                .help("Sets verbosity settings")
-                .takes_value(true)
-                .multiple(true)
-                .number_of_values(1)
-                .possible_values(&[
-                    "types",
-                    "expr-types",
-                    "type-contexts",
-                    "typeck",
-                    "names",
-                    "casts",
-                    "ports",
-                    "consts",
-                    "insts",
-                    "func-args",
-                    "call-args",
-                ])
-                .global(true),
-        )
-        .arg(
             Arg::with_name("inc")
                 .short("I")
                 .value_name("DIR")
@@ -101,15 +74,6 @@ fn main() {
                 .help("Dump VHDL packages for debugging"),
         )
         .arg(
-            Arg::with_name("opt-level")
-                .short("O")
-                .long("opt-level")
-                .help("Sets optimization level applied to the output")
-                .default_value("1")
-                .takes_value(true)
-                .number_of_values(1),
-        )
-        .arg(
             Arg::with_name("lib")
                 .short("l")
                 .long("lib")
@@ -117,37 +81,6 @@ fn main() {
                 .help("Name of the library to compile into")
                 .takes_value(true)
                 .number_of_values(1),
-        )
-        .arg(
-            Arg::with_name("elaborate")
-                .short("e")
-                .long("elaborate")
-                .value_name("ENTITY")
-                .help("Elaborate an entity or module")
-                .multiple(true)
-                .takes_value(true)
-                .number_of_values(1),
-        )
-        .arg(
-            Arg::with_name("output")
-                .short("o")
-                .long("output")
-                .help("Output file (`-` for stdout)")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("output-format")
-                .short("f")
-                .long("format")
-                .help("Output format")
-                .takes_value(true)
-                .possible_values(&["llhd", "mlir", "mlir-native"]),
-        )
-        .arg(
-            Arg::with_name("debug-info")
-                .short("g")
-                .long("debug-info")
-                .help("Emit location information as part of the output"),
         )
         .arg(
             Arg::with_name("INPUT")
@@ -180,7 +113,6 @@ fn main() {
             _ => unreachable!(),
         };
     }
-    session.opts.opt_level = matches.value_of("opt-level").unwrap().parse().unwrap();
 
     // Invoke the compiler.
     score(&session, &matches);
@@ -257,7 +189,7 @@ fn score(sess: &Session, matches: &ArgMatches) {
             sess,
             asts.iter()
                 .flat_map(|ast| match *ast {
-                    score::Ast::Vhdl(ref x) => x.iter(),
+                    Ast::Vhdl(ref x) => x.iter(),
                     _ => [].iter(),
                 })
                 .collect(),
