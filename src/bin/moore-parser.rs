@@ -9,12 +9,12 @@ use clap::{App, Arg, ArgMatches};
 // use moore_circt::{self as circt, mlir, prelude::*, sys::*};
 // use llhd::opt::{Pass, PassContext};
 // use moore::common::score::NodeRef;
-use moore::errors::*;
-// use moore::name::Name;
-// use moore::score::{ScoreBoard, ScoreContext};
-// use moore::source::Span;
-use moore::svlog::{/*ast::AcceptVisitor as _, hir::Visitor as _,*/ QueryDatabase as _};
-use moore::*;
+use moore_parser::errors::*;
+// use moore_parser::name::Name;
+// use moore_parser::score::{ScoreBoard, ScoreContext};
+// use moore_parser::source::Span;
+use moore_parser::svlog::{/*ast::AcceptVisitor as _, hir::Visitor as _,*/ QueryDatabase as _};
+use moore_parser::*;
 use std::fs::OpenOptions;
 use std::io::Read;
 
