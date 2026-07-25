@@ -21,7 +21,7 @@ pub use moore_vhdl as vhdl;
 pub mod score;
 
 #[derive(Debug)]
-enum Language {
+pub enum Language {
     Verilog,
     SystemVerilog,
     Vhdl,
@@ -40,27 +40,33 @@ pub enum Ast<'a> {
 /**
  * Parse a Verilog statement or VHDL primary or secondary unit into an AST
  */
-pub fn parse_string<'a>(filename: &str, content: String, 
+pub fn parse_string<'a>(filename: &str, content: String, language: Option<Language>,
                          include_paths: &[&Path], defines: &[(&str, Option<&str>)]) 
     -> Result<Ast<'a>, DiagBuilder2>
 {
     // Detect the file type.
-    let language = match Path::new(&filename).extension().and_then(|s| s.to_str()) {
-        Some("sv") | Some("svh") => Language::SystemVerilog,
-        Some("v") | Some("vh") => Language::Verilog,
-        Some("vhd") | Some("vhdl") => Language::Vhdl,
-        Some(ext) => {
-            return Err(
-                DiagBuilder2::warning(format!("ignoring `{}`", filename)).add_note(format!(
-                    "Cannot determine language from extension `.{}`",
-                    ext
-                )));
-        }
+    let language = match language {
+        Some(lang) => lang,
         None => {
-            return Err(
-                DiagBuilder2::warning(format!("ignoring `{}`", filename)).add_note(format!(
-                    "No file extension that can be used to guess language"
-                )));
+            // Use the file name to try to find the language
+            match Path::new(&filename).extension().and_then(|s| s.to_str()) {
+                Some("sv") | Some("svh") => Language::SystemVerilog,
+                Some("v") | Some("vh") => Language::Verilog,
+                Some("vhd") | Some("vhdl") => Language::Vhdl,
+                Some(ext) => {
+                    return Err(
+                        DiagBuilder2::warning(format!("ignoring `{}`", filename)).add_note(format!(
+                            "Cannot determine language from extension `.{}`",
+                            ext
+                        )));
+                }
+                None => {
+                    return Err(
+                        DiagBuilder2::warning(format!("ignoring `{}`", filename)).add_note(format!(
+                            "No file extension that can be used to guess language"
+                        )));
+                }
+            }
         }
     };
 

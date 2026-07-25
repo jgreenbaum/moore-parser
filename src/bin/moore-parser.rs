@@ -167,7 +167,7 @@ fn score(sess: &Session, matches: &ArgMatches) {
             }
         }
         
-        match parse_string(filename, content, include_paths.as_slice(), defines.as_slice()) {
+        match parse_string(filename, content, None, include_paths.as_slice(), defines.as_slice()) {
             Ok(ast) => asts.push(ast),
             Err(diag) => sess.emit(diag),
         };
